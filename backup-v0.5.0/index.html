@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CutPlan — Sheet Optimization</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="./cutting-list-parser.js"></script>
+<script src="./nesting-engine.js"></script>
+<style>
+:root{--bg:#f3f6f7;--panel:#fff;--ink:#17252c;--muted:#687982;--line:#dbe4e7;--green:#176b5b;--green-soft:#e9f4f1;--amber:#fff6df;--amber-ink:#765414;--red:#b23f43;--shadow:0 10px 30px #19303a0b;--radius:16px}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{max-width:1500px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.brand{display:flex;align-items:center;gap:12px}.logo{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:var(--green);color:#fff;font-size:21px;font-weight:850}.brand h1{margin:0;font-size:22px;letter-spacing:-.4px}.brand p{margin:1px 0 0;color:var(--muted);font-size:12px}.version{background:var(--green-soft);color:var(--green);padding:7px 11px;border-radius:99px;font-size:11px;font-weight:800}.grid{display:grid;grid-template-columns:minmax(380px,480px) minmax(0,1fr);gap:18px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;min-width:0}.panel h2{font-size:16px;margin:0 0 4px}.sub{color:var(--muted);font-size:12px;margin:0 0 15px}.tabs{display:flex;gap:4px;background:#f0f4f5;border-radius:11px;padding:4px;margin-bottom:13px}.tabs button{flex:1;border:0;background:transparent;border-radius:8px;padding:9px;font-weight:700;color:var(--muted);cursor:pointer}.tabs button.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px #0001}.drop{border:1.5px dashed #b8c9cd;border-radius:12px;background:#fafcfc;padding:18px;text-align:center}.drop strong{display:block;margin:5px 0}.drop small{color:var(--muted)}input,select,textarea,button{font:inherit}input[type=file]{max-width:100%;margin:10px 0 0}textarea{width:100%;min-height:105px;padding:10px;border:1px solid var(--line);border-radius:10px;resize:vertical}.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.field label{display:block;font-size:11px;font-weight:750;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;color:var(--ink)}.btn{border:0;border-radius:9px;background:var(--green);color:white;padding:10px 13px;font-weight:750;cursor:pointer}.btn.secondary{background:#edf2f3;color:#30424a}.btn.ghost{background:transparent;color:var(--green);border:1px solid var(--line)}.btn:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}.mode-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.mode-btn{min-width:0;padding:11px 7px;font-size:12px;line-height:1.25;background:#edf2f3;color:#30424a;border:1px solid var(--line)}.mode-btn.active{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 0 0 2px #176b5b22}.mode-help{margin:6px 0 0;color:var(--muted);font-size:11px}.status{min-height:18px;margin-top:8px;color:var(--muted);font-size:12px}.status.error{color:var(--red)}.status.success{color:var(--green)}.hint{margin-top:12px;padding:11px 12px;border-radius:10px;background:var(--amber);border:1px solid #f0dfb0;color:var(--amber-ink);font-size:12px}.parts-head{display:flex;align-items:center;justify-content:space-between;margin:20px 0 8px}.parts-head h3{font-size:13px;margin:0}.parts-head small{color:var(--muted);font-weight:500}.table-wrap{overflow:auto;max-height:390px;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}th{position:sticky;top:0;z-index:1;background:#f4f7f8;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;text-align:left}td,th{padding:8px 7px;border-bottom:1px solid #edf1f2}td input{width:68px;padding:6px;border:1px solid var(--line);border-radius:6px}td input.ref{width:86px}td input[type=checkbox]{width:auto}.del{border:0;background:transparent;color:var(--red);font-size:17px;cursor:pointer}.right{display:flex;flex-direction:column;gap:18px}.canvas-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.canvas-head h2{margin:0 0 3px}.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:15px 0}.metric{background:#f7f9fa;border:1px solid #e7edef;border-radius:11px;padding:11px;min-width:0}.metric span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:800;letter-spacing:.03em}.metric strong{display:block;margin-top:3px;font-size:20px;letter-spacing:-.5px;overflow-wrap:anywhere}.sheets{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px}.sheet-card{border:1px solid var(--line);border-radius:12px;padding:11px;min-width:0;break-inside:avoid}.sheet-title{display:flex;justify-content:space-between;gap:8px;font-weight:800;font-size:12px;margin-bottom:8px}.sheet-title small{font-size:11px;font-weight:550;color:var(--muted)}svg.layout{display:block;width:100%;height:auto;background:#f9fbfb;border:1px solid #cbd8dc;border-radius:6px}.piece{stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}.piece-label{font-weight:800;fill:#193a35;text-anchor:middle;dominant-baseline:middle;pointer-events:none}.piece-dim{fill:#31564f;text-anchor:middle;pointer-events:none}.sheet-foot{display:flex;justify-content:space-between;gap:8px;margin-top:7px;color:var(--muted);font-size:10px}.piece-key{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;margin-top:9px;padding-top:8px;border-top:1px solid #edf1f2}.piece-key span{font-size:10px;color:#40535b;overflow-wrap:anywhere}.piece-key b{color:#1e3935}.small-callouts{margin-top:9px;border-top:1px solid #dbe4e7;padding-top:8px}.small-callouts>strong{display:block;font-size:11px;margin-bottom:5px}.small-callouts table{width:100%;white-space:normal;font-size:11px}.small-callouts th{position:static}.small-callouts td,.small-callouts th{padding:5px 6px}.small-callouts td{overflow-wrap:anywhere}.empty{padding:64px 18px;text-align:center;color:var(--muted)}.empty b{display:block;font-size:16px;color:var(--ink);margin-bottom:5px}.notice{padding:12px;border-radius:10px;background:#f6f9fa;border:1px solid var(--line);font-size:12px;color:#485b63}.notice strong{color:var(--ink)}.legend{color:var(--muted);font-size:11px;margin-top:10px}.pill{display:inline-flex;align-items:center;gap:5px;background:#edf6f3;color:var(--green);padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800}.progress{height:7px;border-radius:99px;background:#edf1f2;overflow:hidden;margin-top:9px}.progress>i{display:block;height:100%;width:0;background:var(--green);transition:width .2s}.footer{color:var(--muted);font-size:11px;text-align:center;margin:18px 0 2px}.hidden{display:none!important}@media(max-width:1050px){.grid{grid-template-columns:1fr}.shell{padding:14px}}@media(max-width:900px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:580px){.metrics{grid-template-columns:repeat(2,1fr)}.field-grid{grid-template-columns:1fr 1fr}.canvas-head{flex-direction:column}.sheets{grid-template-columns:1fr}.top{align-items:flex-start}.version{display:none}}
+
+.banding-cell{min-width:310px;white-space:normal}
+.banding-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 8px}
+.banding-controls label{display:flex;align-items:center;justify-content:space-between;gap:5px;color:#455860;font-size:10px;font-weight:700}
+.banding-controls input{width:48px!important;min-width:48px;padding:4px!important}
+.unresolved-wrap{margin-top:14px;padding:12px;border:1px solid #e8d19a;background:#fffaf0;border-radius:10px}
+.unresolved-wrap h3{margin:0 0 4px;font-size:13px}
+.unresolved-wrap>p{font-size:11px;color:#765414;margin:0 0 10px}
+.unresolved-card{border:1px solid #eadfbe;background:#fff;border-radius:8px;padding:9px;margin-top:8px}
+.unresolved-source{font-size:11px;color:#52636a;overflow-wrap:anywhere;margin-bottom:7px}
+.unresolved-reason{font-size:10px;color:#9a5a16;margin-bottom:7px}
+.unresolved-fields{display:grid;grid-template-columns:repeat(5,minmax(70px,1fr));gap:6px}
+.unresolved-fields label{font-size:9px;color:#586970;font-weight:700}
+.unresolved-fields input{display:block;width:100%;min-width:0;padding:6px;border:1px solid var(--line);border-radius:6px;margin-top:3px}
+.unresolved-fields .rotate-field{display:flex;align-items:center;gap:5px;padding-top:17px}
+.unresolved-fields .rotate-field input{width:auto;margin:0}
+.unresolved-card .btn{margin-top:8px;padding:7px 10px;font-size:11px}
+.callout-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px;margin-top:5px}
+.callout-item{font-size:10px;color:#30424a;overflow-wrap:anywhere;border:1px solid #e5eaec;border-radius:5px;padding:4px 6px}
+.callout-item b{margin-right:4px;color:#17252c}
+.callout-item small{color:#65757c}
+@page{size:A4 portrait;margin:10mm}
+@media print{
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+  .shell{max-width:none!important;padding:0!important;margin:0!important}
+  .top,.left-panel,.canvas-head,.before-panel,.metrics,.legend,.footer{display:none!important}
+  .grid,.right{display:block!important;margin:0!important;padding:0!important}
+  .panel{border:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
+  #layoutArea{display:block!important;margin:0!important;padding:0!important}
+  .sheets{display:block!important;margin:0!important;padding:0!important}
+  .sheet-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;width:100%!important;height:276mm!important;min-height:276mm!important;max-height:276mm!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;break-inside:avoid!important;page-break-inside:avoid!important;break-after:page!important;page-break-after:always!important;overflow:hidden!important}
+  .sheet-card:last-child{break-after:auto!important;page-break-after:auto!important}
+  .sheet-title{flex:0 0 7mm!important;height:7mm!important;margin:0 0 2mm!important;font-size:10pt!important}
+  .sheet-title small{font-size:8pt!important}
+  svg.layout{display:block!important;flex:0 1 auto!important;width:auto!important;height:var(--print-board-height,258mm)!important;max-width:100%!important;max-height:var(--print-board-height,258mm)!important;margin:0 auto!important;background:#fff!important;border:1px solid #111!important;border-radius:0!important}
+  .small-callouts{display:block!important;flex:0 0 auto!important;max-height:calc(277mm - var(--print-board-height,258mm) - 12mm)!important;overflow:hidden!important;margin:2mm 0 0!important;padding:1mm 0 0!important;border-top:1px solid #777!important}
+  .small-callouts>strong{font-size:7pt!important;margin:0 0 1mm!important}
+  .callout-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:1mm 2mm!important;margin:0!important}
+  .callout-item{font-size:6.5pt!important;line-height:1.2!important;padding:1mm!important;border:0!important}
+}
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand"><div class="logo">C</div><div><h1>CutPlan</h1><p>Cutting-list to optimized sheet layout</p></div></div>
+    <span class="version">v0.5.0 · Guillotine optimizer</span>
+  </header>
+  <div class="grid">
+    <section class="panel left-panel">
+      <h2>1. Cutting list</h2>
+      <p class="sub">Upload a printed list, import CSV, or enter rows. Alphanumeric references are preserved exactly.</p>
+      <div class="tabs"><button id="tabImage" class="active" type="button">PDF / Image</button><button id="tabCsv" type="button">CSV import</button><button id="tabManual" type="button">Manual</button></div>
+      <div id="imagePane">
+        <div class="drop"><div style="font-size:25px">▧</div><strong>Upload a cutting-list PDF or image</strong><small>Digital PDFs use text extraction; scanned PDFs use OCR · PDF, JPG, PNG</small><input id="imageFile" type="file" accept="application/pdf,.pdf,image/*"></div>
+        <div class="actions"><button class="btn secondary" id="ocrBtn" disabled>Read PDF / image</button></div>
+        <div class="progress"><i id="ocrProgress"></i></div><div class="status" id="ocrStatus">OCR text is only a draft. You must review every extracted row.</div>
+        <label class="field" style="display:block;margin-top:10px"><span style="display:block;font-size:11px;color:var(--muted);font-weight:750;margin-bottom:5px">Recognized text (editable before parsing)</span><textarea id="ocrText" placeholder="Example: 1A 780__ 500_ 2 or 2KB 600~~ 300_ 1"></textarea></label>
+        <div class="actions"><button class="btn" id="parseOcr">Parse rows</button><button class="btn ghost" id="clearOcr">Clear text</button></div>
+        <section id="unresolvedWrap" class="unresolved-wrap hidden" aria-live="polite">
+          <h3>Items needing review</h3>
+          <p>These source lines were extracted but could not be safely added as rows. Correct the fields and click Add row; they will not be silently discarded.</p>
+          <div id="unresolvedList"></div>
+        </section>
+      </div>
+      <div id="csvPane" class="hidden">
+        <p class="sub">CSV columns: row_id,length,width,quantity,rotation. Use _ for 0.8 mm banding and ~ for 2 mm banding; repeat the symbol once per side.</p>
+        <textarea id="csvText" placeholder="row_id,length,width,quantity,rotation&#10;1A,780__,500_,2,yes&#10;2KB,600~~,300_,1,yes"></textarea>
+        <div class="actions"><button class="btn" id="importCsv">Import CSV</button><button class="btn secondary" id="downloadTemplate">Download template</button><button class="btn ghost" id="loadBenchmark">Load my 27-row test list</button></div>
+      </div>
+      <div id="manualPane" class="hidden">
+        <p class="sub">Add rows directly. Set edge-banding edge counts in the editable controls in the table.</p>
+        <div class="actions" style="margin-top:0"><button class="btn" id="addRow">+ Add cutting-list row</button><button class="btn ghost" id="loadBenchmark2">Load my 27-row test list</button></div>
+      </div>
+
+      <div class="parts-head"><h3>ROWS <small id="rowSummary">0 rows · 0 pieces</small></h3><button class="btn ghost" id="clearRows" style="padding:7px 10px">Clear list</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Ref</th><th>Length (mm)</th><th>Width (mm)</th><th>Qty</th><th>Rotate</th><th>Edge banding · edge counts</th><th></th></tr></thead><tbody id="partsBody"><tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted)">No rows yet. Upload a list or add a row.</td></tr></tbody></table></div>
+
+      <h2 style="margin-top:20px">2. Sheet & cut settings</h2>
+      <div class="field-grid">
+        <div class="field"><label for="sheetL">Sheet length (mm)</label><input id="sheetL" type="number" min="1" placeholder="Enter sheet length"></div>
+        <div class="field"><label for="sheetW">Sheet width (mm)</label><input id="sheetW" type="number" min="1" placeholder="Enter sheet width"></div>
+        <div class="field"><label for="kerf">Blade kerf (mm)</label><input id="kerf" type="number" min="0" step="0.1" placeholder="Unknown"></div>
+        <div class="field"><label for="margin">Edge margin (mm)</label><input id="margin" type="number" min="0" step="1" value="0"></div>
+        <div class="field" style="grid-column:1/-1"><label for="effort">Optimization search effort</label><select id="effort"><option value="standard">Standard · 12 search starts</option><option value="high" selected>High · 64 search starts</option><option value="max">Maximum · 240 search starts</option></select></div>
+      </div>
+      <div class="hint"><strong>Kerf:</strong> enter the measured blade width. If left blank, the layout is provisional and assumes 0 mm kerf. All three modes use the same multi-stage guillotine rules. Edge banding can be detected from _ / ~ markers or edited manually in the row table. L means the length dimension and W means the width dimension. Each count is the number of edges on that dimension (0–2).</div>
+      <div style="margin-top:13px"><strong style="font-size:12px">Choose the cutting direction</strong>
+        <div class="mode-actions" role="group" aria-label="Cutting mode">
+          <button class="btn mode-btn" type="button" data-cut-mode="width">Cut along width</button>
+          <button class="btn mode-btn" type="button" data-cut-mode="length">Cut along length</button>
+          <button class="btn mode-btn" type="button" data-cut-mode="optimum">Optimal</button>
+        </div>
+        <p class="mode-help">Each button generates a separate plan. Optimal compares both cut directions and selects the best validated result.</p>
+      </div>
+      <div class="actions"><button class="btn secondary" id="exportCsv">Export validated rows</button></div>
+      <div class="status" id="mainStatus" aria-live="polite"></div>
+    </section>
+
+    <div class="right">
+      <section class="panel">
+        <div class="canvas-head"><div><h2>3. Optimized sheet layout</h2><p class="sub" style="margin:2px 0 0">Vertical board view · monochrome technical drawing · original row references.</p></div><button class="btn secondary" id="printBtn" disabled>Print / Save PDF</button></div>
+        <div class="metrics">
+          <div class="metric"><span>Sheets used</span><strong id="mSheets">—</strong></div>
+          <div class="metric"><span>Pieces placed</span><strong id="mPieces">—</strong></div>
+          <div class="metric"><span>Utilization</span><strong id="mUtil">—</strong></div>
+          <div class="metric"><span>Waste area</span><strong id="mWaste">—</strong></div>
+          <div class="metric"><span>0.8 mm banding</span><strong id="mBand08">—</strong></div>
+          <div class="metric"><span>2 mm banding</span><strong id="mBand2">—</strong></div>
+        </div>
+        <div id="layoutArea" class="empty"><b>Your layout will appear here</b>Start with your cutting list, confirm the sheet size and run optimization.</div>
+        <div class="legend">Monochrome vertical board drawings. Dimension values appear along the matching sides; original references are retained.</div>
+      </section>
+      <section class="panel before-panel">
+        <h2>4. Validation & production notes</h2>
+        <p class="sub">CutPlan checks that all entered pieces are placed and that rectangles do not overlap.</p>
+        <div id="warnings" class="notice">No plan generated yet.</div>
+      </section>
+    </div>
+  </div>
+  <div class="footer">CutPlan v0.5.0 · Browser-based tool · Verify machine cutting sequence, grain direction, clamping and edge trim before production.</div>
+</div>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+let rows = [];
+let lastPlan = null;
+let imageFile = null;
+if (!window.CutPlanParser) throw new Error('Cutting-list parser did not load. Keep cutting-list-parser.js beside index.html and reload.');
+const { parseDimensionToken, formatDimensionToken } = CutPlanParser;
+
+function setTab(tab) {
+  for (const key of ['image','csv','manual']) {
+    $(`${key}Pane`).classList.toggle('hidden', key !== tab);
+    $(`tab${key[0].toUpperCase()}${key.slice(1)}`).classList.toggle('active', key === tab);
+  }
+}
+$('tabImage').onclick = () => setTab('image');
+$('tabCsv').onclick = () => setTab('csv');
+$('tabManual').onclick = () => setTab('manual');
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function nextRowId() {
+  const nums = rows.map(r => Number(r.rowId)).filter(Number.isFinite);
+  let next = 1;
+  while (nums.includes(next)) next++;
+  return String(next);
+}
+function pieceTotal() { return rows.reduce((sum, row) => sum + (Number(row.qty) || 0), 0); }
+function calculateBandingTotals() {
+  return rows.reduce((totals, row) => {
+    const spec = row.edgeBandingSpec || emptyEdgeBandingSpec();
+    const qty = Number(row.qty) || 0;
+    totals['0.8'] += ((Number(row.length) || 0) * (Number(spec['0.8']?.length) || 0) + (Number(row.width) || 0) * (Number(spec['0.8']?.width) || 0)) * qty;
+    totals['2'] += ((Number(row.length) || 0) * (Number(spec['2']?.length) || 0) + (Number(row.width) || 0) * (Number(spec['2']?.width) || 0)) * qty;
+    return totals;
+  }, { '0.8': 0, '2': 0 });
+}
+function updateBandingMetrics() {
+  const totals = calculateBandingTotals();
+  $('mBand08').textContent = fmtBandMeters(totals['0.8']);
+  $('mBand2').textContent = fmtBandMeters(totals['2']);
+}
+function emptyEdgeBandingSpec() { return { '0.8': { length: 0, width: 0 }, '2': { length: 0, width: 0 } }; }
+function edgeBandingLabel(spec = emptyEdgeBandingSpec()) {
+  const labels = [];
+  for (const material of ['0.8','2']) {
+    const band = spec[material] || {};
+    const lengthCount = Number(band.length) || 0;
+    const widthCount = Number(band.width) || 0;
+    if (lengthCount || widthCount) {
+      const sides = [];
+      if (lengthCount) sides.push(`L×${lengthCount}`);
+      if (widthCount) sides.push(`W×${widthCount}`);
+      labels.push(`${material} mm: ${sides.join(' ')}`);
+    }
+  }
+  return labels.join(' · ') || 'None';
+}
+function updateDimensionFromInput(row, key, rawValue) {
+  const parsed = parseDimensionToken(rawValue);
+  if (!parsed || parsed.value <= 0 || parsed.value > 100000) throw new Error(`Enter a valid ${key} in millimetres.`);
+  row[key] = parsed.value;
+  row.edgeBandingSpec = row.edgeBandingSpec || emptyEdgeBandingSpec();
+  row.edgeBandingSpec['0.8'] = row.edgeBandingSpec['0.8'] || { length: 0, width: 0 };
+  row.edgeBandingSpec['2'] = row.edgeBandingSpec['2'] || { length: 0, width: 0 };
+  // Plain dimension edits preserve manual banding. Explicit _ / ~ suffixes
+  // still update the corresponding material counts for quick auto-entry.
+  if (/[_~]/.test(String(rawValue))) {
+    row.edgeBandingSpec['0.8'][key] = parsed.underscoreCount;
+    row.edgeBandingSpec['2'][key] = parsed.tildeCount;
+  }
+}
+function invalidatePlan() {
+  lastPlan = null;
+  $('printBtn').disabled = true;
+  $('layoutArea').className = 'empty';
+  $('layoutArea').innerHTML = '<b>Cutting list changed</b>Run optimization again to update the layout.';
+  $('warnings').textContent = 'Plan is out of date. Optimize again after editing the cutting list.';
+  for (const id of ['mSheets','mPieces','mUtil','mWaste']) $(id).textContent = '—';
+  updateBandingMetrics();
+  document.querySelectorAll('[data-cut-mode]').forEach(button => button.classList.remove('active'));
+}
+function renderRows() {
+  $('rowSummary').textContent = `${rows.length} rows · ${pieceTotal()} pieces`;
+  updateBandingMetrics();
+  if (!rows.length) {
+    $('partsBody').innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted)">No rows yet. Upload a list or add a row.</td></tr>';
+    return;
+  }
+  $('partsBody').innerHTML = rows.map((r, i) => {
+    const spec = r.edgeBandingSpec || emptyEdgeBandingSpec();
+    const count = (material, axis) => Number(spec[material]?.[axis]) || 0;
+    return `<tr data-i="${i}">
+      <td><input class="ref" type="text" data-k="rowId" value="${escapeHtml(r.rowId)}" aria-label="Row reference"></td>
+      <td><input type="text" data-k="length" value="${escapeHtml(r.length)}" aria-label="Length in millimetres"></td>
+      <td><input type="text" data-k="width" value="${escapeHtml(r.width)}" aria-label="Width in millimetres"></td>
+      <td><input type="number" min="1" step="1" data-k="qty" value="${escapeHtml(r.qty)}" aria-label="Quantity"></td>
+      <td><input type="checkbox" data-k="rotate" ${r.rotate ? 'checked' : ''} aria-label="Allow rotation"></td>
+      <td class="banding-cell"><div class="banding-controls">
+        <label>0.8 L <input type="number" min="0" max="2" step="1" data-k="band08Length" value="${count('0.8','length')}" aria-label="0.8 millimetre banding on length edges"></label>
+        <label>0.8 W <input type="number" min="0" max="2" step="1" data-k="band08Width" value="${count('0.8','width')}" aria-label="0.8 millimetre banding on width edges"></label>
+        <label>2 L <input type="number" min="0" max="2" step="1" data-k="band2Length" value="${count('2','length')}" aria-label="2 millimetre banding on length edges"></label>
+        <label>2 W <input type="number" min="0" max="2" step="1" data-k="band2Width" value="${count('2','width')}" aria-label="2 millimetre banding on width edges"></label>
+      </div></td>
+      <td><button class="del" data-del="${i}" title="Delete row" aria-label="Delete row">×</button></td>
+    </tr>`;
+  }).join('');
+  $('partsBody').querySelectorAll('input').forEach(input => input.addEventListener('change', e => {
+    const tr = e.target.closest('tr'), i = Number(tr.dataset.i), key = e.target.dataset.k;
+    try {
+      const bandKeys = {
+        band08Length: ['0.8','length'], band08Width: ['0.8','width'],
+        band2Length: ['2','length'], band2Width: ['2','width']
+      };
+      if (key === 'length' || key === 'width') {
+        updateDimensionFromInput(rows[i], key, e.target.value);
+      } else if (bandKeys[key]) {
+        const value = Number(e.target.value);
+        if (!Number.isInteger(value) || value < 0 || value > 2) throw new Error('Each dimension can have 0, 1 or 2 banded edges.');
+        const [material, axis] = bandKeys[key];
+        rows[i].edgeBandingSpec = rows[i].edgeBandingSpec || emptyEdgeBandingSpec();
+        rows[i].edgeBandingSpec[material] = rows[i].edgeBandingSpec[material] || { length: 0, width: 0 };
+        rows[i].edgeBandingSpec[material][axis] = value;
+      } else {
+        rows[i][key] = key === 'rotate' ? e.target.checked : key === 'rowId' ? e.target.value.trim() : Number(e.target.value);
+      }
+      renderRows();
+      invalidatePlan();
+    } catch (error) {
+      renderRows();
+      setStatus('mainStatus', error.message, true);
+    }
+  }));
+  $('partsBody').querySelectorAll('[data-del]').forEach(button => button.addEventListener('click', () => {
+    rows.splice(Number(button.dataset.del), 1); renderRows(); invalidatePlan();
+  }));
+}
+function addRow(data = {}) {
+  rows.push({ rowId: data.rowId ?? nextRowId(), length: data.length ?? 600, width: data.width ?? 400,
+    qty: data.qty ?? 1, rotate: data.rotate ?? true, edgeBanding: data.edgeBanding || {top:false,right:false,bottom:false,left:false},
+    edgeBandingSpec: data.edgeBandingSpec || emptyEdgeBandingSpec() });
+  renderRows(); invalidatePlan();
+}
+$('addRow').onclick = () => addRow();
+$('clearRows').onclick = () => { rows = []; renderRows(); invalidatePlan(); $('mainStatus').textContent = 'Cutting list cleared.'; };
+
+const benchmarkRows = [
+  [1,470,300,2],[2,700,300,4],[3,470,290,1],[4,688,490,5],[5,676,65,2],[6,676,180,3],
+  [7,220,300,2],[8,220,290,1],[9,776,300,1],[10,300,300,2],[11,470,300,1],[12,300,300,2],
+  [13,1012,400,2],[14,350,400,2],[15,877,380,1],[16,877,90,2],[17,800,380,2],[18,877,370,1],
+  [19,677,500,2],[20,1306,500,2],[21,717,490,1],[22,860,300,2],[23,565,300,2],[24,677,270,1],
+  [25,570,300,2],[26,565,300,2],[27,450,290,1]
+].map(([rowId,length,width,qty]) => ({ rowId: String(rowId), length, width, qty, rotate: true }));
+function loadBenchmark() {
+  rows = benchmarkRows.map(r => ({...r})); renderRows(); invalidatePlan();
+  $('mainStatus').textContent = 'Loaded the 27-row benchmark list from your photo. Check the values before optimizing.';
+}
+$('loadBenchmark').onclick = loadBenchmark;
+$('loadBenchmark2').onclick = loadBenchmark;
+
+function parseOcrRows(text) { return CutPlanParser.parseOcrRows(text); }
+let unresolvedRows = [];
+function renderUnresolvedRows() {
+  const wrap = $('unresolvedWrap');
+  if (!unresolvedRows.length) {
+    wrap.classList.add('hidden');
+    $('unresolvedList').innerHTML = '';
+    return;
+  }
+  wrap.classList.remove('hidden');
+  $('unresolvedList').innerHTML = unresolvedRows.map((item, i) => {
+    const c = item.candidate || {};
+    const spec = c.edgeBandingSpec || emptyEdgeBandingSpec();
+    const length = c.length !== '' && c.length != null ? formatDimensionToken(c.length, spec, 'length') : '';
+    const width = c.width !== '' && c.width != null ? formatDimensionToken(c.width, spec, 'width') : '';
+    return `<div class="unresolved-card" data-u-index="${i}">
+      <div class="unresolved-source"><b>Line ${item.lineNumber}:</b> ${escapeHtml(item.line)}</div>
+      <div class="unresolved-reason">${escapeHtml(item.reason)}</div>
+      <div class="unresolved-fields">
+        <label>Reference<input data-u-k="rowId" value="${escapeHtml(c.rowId || '')}" autocomplete="off"></label>
+        <label>Length (mm)<input data-u-k="length" value="${escapeHtml(length)}" inputmode="decimal"></label>
+        <label>Width (mm)<input data-u-k="width" value="${escapeHtml(width)}" inputmode="decimal"></label>
+        <label>Quantity<input data-u-k="qty" type="number" min="1" step="1" value="${escapeHtml(c.qty ?? '')}"></label>
+        <label class="rotate-field"><input data-u-k="rotate" type="checkbox" ${c.rotate === false ? '' : 'checked'}> Rotation allowed</label>
+      </div>
+      <button class="btn" type="button" data-resolve="${i}">Add corrected row</button>
+    </div>`;
+  }).join('');
+  $('unresolvedList').querySelectorAll('[data-resolve]').forEach(button => button.addEventListener('click', () => {
+    const index = Number(button.dataset.resolve), card = button.closest('.unresolved-card');
+    const value = key => card.querySelector(`[data-u-k="${key}"]`);
+    const ref = value('rowId').value.trim();
+    const lengthParsed = parseDimensionToken(value('length').value);
+    const widthParsed = parseDimensionToken(value('width').value);
+    const qty = Number(value('qty').value);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref)) { setStatus('mainStatus', 'Enter a valid reference before adding this row.', true); return; }
+    if (!lengthParsed || !widthParsed || lengthParsed.value <= 0 || widthParsed.value <= 0 || lengthParsed.value > 100000 || widthParsed.value > 100000) { setStatus('mainStatus', 'Enter valid length and width values in millimetres.', true); return; }
+    if (!Number.isInteger(qty) || qty < 1 || qty > 10000) { setStatus('mainStatus', 'Quantity must be a whole number from 1 to 10000.', true); return; }
+    if (rows.some(r => String(r.rowId).toLowerCase() === ref.toLowerCase())) { setStatus('mainStatus', `Reference ${ref} already exists. Use a different reference.`, true); return; }
+    const oldSpec = unresolvedRows[index].candidate?.edgeBandingSpec || emptyEdgeBandingSpec();
+    const hasMarkers = /[_~]/.test(value('length').value) || /[_~]/.test(value('width').value);
+    const spec = hasMarkers ? {
+      '0.8': { length: lengthParsed.underscoreCount, width: widthParsed.underscoreCount },
+      '2': { length: lengthParsed.tildeCount, width: widthParsed.tildeCount }
+    } : oldSpec;
+    rows.push({ rowId: ref, length: lengthParsed.value, width: widthParsed.value, qty,
+      rotate: value('rotate').checked,
+      edgeBanding: { top: false, right: false, bottom: false, left: false },
+      edgeBandingSpec: spec });
+    unresolvedRows.splice(index, 1);
+    renderRows(); renderUnresolvedRows(); invalidatePlan();
+    setStatus('mainStatus', `Added corrected row ${ref}. Review the cutting list before optimizing.`);
+  }));
+}
+$('imageFile').onchange = e => {
+  imageFile = e.target.files?.[0] || null;
+  $('ocrBtn').disabled = !imageFile;
+  $('ocrStatus').textContent = imageFile ? `Selected: ${imageFile.name}. Click Read PDF / image.` : 'Extracted text is only a draft. Review every row.';
+};
+async function preprocessImage(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(3, Math.max(1.6, 1800 / bitmap.width));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const gray = img.data[i] * .299 + img.data[i+1] * .587 + img.data[i+2] * .114;
+    const contrast = Math.max(0, Math.min(255, (gray - 128) * 1.35 + 128));
+    img.data[i] = img.data[i+1] = img.data[i+2] = contrast;
+  }
+  ctx.putImageData(img, 0, 0);
+  bitmap.close?.();
+  return canvas;
+}
+function pdfPageTextToLines(textContent) {
+  const items = (textContent.items || []).filter(item => item.str && item.str.trim()).map(item => ({
+    text: item.str.trim(), x: item.transform?.[4] || 0, y: item.transform?.[5] || 0
+  })).sort((a,b) => b.y-a.y || a.x-b.x);
+  const lines = [];
+  for (const item of items) {
+    let line = lines.find(candidate => Math.abs(candidate.y-item.y) <= 5.0);
+    if (!line) { line = { y:item.y, items:[] }; lines.push(line); }
+    line.items.push(item);
+  }
+  return lines.sort((a,b)=>b.y-a.y).map(line => line.items.sort((a,b)=>a.x-b.x).map(item=>item.text).join(' ')).join('\n');
+}
+async function readPdf(file) {
+  if (!window.pdfjsLib) throw new Error('PDF reader did not load. Check your internet connection, then reload CutPlan.');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const digitalPages = [];
+  for (let pageNo=1; pageNo<=pdf.numPages; pageNo++) {
+    $('ocrStatus').textContent = `Reading PDF text · page ${pageNo}/${pdf.numPages}`;
+    const page = await pdf.getPage(pageNo);
+    const text = pdfPageTextToLines(await page.getTextContent());
+    digitalPages.push(text);
+  }
+  const digitalText = digitalPages.join('\n\n');
+  const digitalParsed = parseOcrRows(digitalText);
+  const digitalRows = digitalParsed.rows.length;
+  if (digitalRows > 0 || digitalParsed.rejected.length > 0) return { text:digitalText, method:'PDF text extraction', pages:pdf.numPages };
+  if (!window.Tesseract) throw new Error('This PDF appears scanned and the OCR library did not load. Check internet access.');
+  let scannedText = '';
+  for (let pageNo=1; pageNo<=pdf.numPages; pageNo++) {
+    $('ocrStatus').textContent = `Scanned PDF detected · OCR page ${pageNo}/${pdf.numPages}`;
+    const page = await pdf.getPage(pageNo);
+    const viewport = page.getViewport({ scale:2.2 });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+    await page.render({ canvasContext:canvas.getContext('2d'), viewport }).promise;
+    const result = await Tesseract.recognize(canvas, 'eng', { logger:m=>{ if(m.progress) $('ocrProgress').style.width=`${Math.round(m.progress*100)}%`; } });
+    scannedText += `\n${result.data.text || ''}`;
+    canvas.width=canvas.height=1;
+  }
+  return { text:scannedText, method:'PDF page rendering + OCR', pages:pdf.numPages };
+}
+$('ocrBtn').onclick = async () => {
+  if (!imageFile) return;
+  $('ocrBtn').disabled = true; $('ocrProgress').style.width='0%';
+  try {
+    let resultText='', method='';
+    if (imageFile.type==='application/pdf' || imageFile.name.toLowerCase().endsWith('.pdf')) {
+      const result = await readPdf(imageFile); resultText=result.text; method=result.method;
+    } else {
+      if (!window.Tesseract) throw new Error('OCR library did not load. Check your internet connection.');
+      $('ocrStatus').textContent='Preprocessing image…';
+      const processed=await preprocessImage(imageFile);
+      const result=await Tesseract.recognize(processed,'eng',{logger:msg=>{
+        if(msg.status) $('ocrStatus').textContent=`${msg.status}${msg.progress?` · ${Math.round(msg.progress*100)}%`:''}`;
+        if(typeof msg.progress==='number') $('ocrProgress').style.width=`${Math.round(msg.progress*100)}%`;
+      },tessedit_pageseg_mode:6,preserve_interword_spaces:'1'});
+      resultText=result.data.text||''; method=`Image OCR · confidence ${Math.round(result.data.confidence||0)}%`;
+    }
+    $('ocrText').value=resultText;
+    const detected=parseOcrRows(resultText);
+    $('ocrStatus').textContent=`${method} complete. ${detected.rows.length} row(s) parsed automatically; ${detected.rejected.length} line(s) need review. Review extracted values, then parse rows.`;
+  } catch(error) { $('ocrStatus').textContent=`File reading failed: ${error.message}`; }
+  finally { $('ocrBtn').disabled=false; }
+};
+$('parseOcr').onclick = () => {
+  const parsed = parseOcrRows($('ocrText').value);
+  if (!parsed.rows.length && !parsed.rejected.length) {
+    $('ocrStatus').textContent = 'No cutting-list rows were detected. Existing rows were left unchanged; check the extracted text or enter rows manually.';
+    return;
+  }
+  const previousRowCount = rows.length;
+  if (parsed.rows.length) rows = parsed.rows;
+  unresolvedRows = parsed.rejected;
+  renderRows(); renderUnresolvedRows(); invalidatePlan();
+  if (parsed.rows.length) {
+    $('ocrStatus').textContent = `Added ${parsed.rows.length} row(s) / ${pieceTotal()} pieces. ${parsed.rejected.length} extracted line(s) need review below; none of those lines were discarded.`;
+  } else {
+    $('ocrStatus').textContent = `No rows were parsed automatically. Kept ${previousRowCount} existing row(s) and listed ${parsed.rejected.length} extracted line(s) for manual correction below.`;
+  }
+  $('mainStatus').textContent = 'Extracted data loaded for review. Correct any unresolved lines before optimizing.';
+};
+$('clearOcr').onclick = () => {
+  $('ocrText').value = ''; unresolvedRows = []; renderUnresolvedRows();
+  $('ocrStatus').textContent = 'OCR text cleared.';
+};
+
+function parseCsvLine(line) {
+  // Simple CSV reader supports quoted cells and commas inside quoted names.
+  const cells = []; let cur = '', quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"' && line[i+1] === '"' && quoted) { cur += '"'; i++; }
+    else if (ch === '"') quoted = !quoted;
+    else if ((ch === ',' || ch === '\t' || ch === ';') && !quoted) { cells.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  cells.push(cur.trim());
+  return cells;
+}
+$('importCsv').onclick = () => {
+  const imported = [], seen = new Set();
+  for (const [lineIndex,line] of $('csvText').value.split(/\r?\n/).entries()) {
+    if (!line.trim()) continue;
+    const c=parseCsvLine(line);
+    if (lineIndex===0 && /row|length|width|qty|quantity/i.test(line)) continue;
+    const isRotation = value => /^(yes|no|true|false|0|1|fixed)$/i.test(value||'');
+    const validRef = value => /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value||'');
+    let row, lengthToken, widthToken;
+    if (c.length>=5 && validRef(c[0]) && isRotation(c[4])) {
+      lengthToken=c[1]; widthToken=c[2];
+      row={rowId:c[0],qty:Number(c[3]),rotate:!/^(no|false|0|fixed)$/i.test(c[4]),edgeBanding:{top:/^(1|yes|true)$/i.test(c[5]||''),right:/^(1|yes|true)$/i.test(c[6]||''),bottom:/^(1|yes|true)$/i.test(c[7]||''),left:/^(1|yes|true)$/i.test(c[8]||'')}};
+    } else if (c.length>=4 && isRotation(c[3])) {
+      lengthToken=c[0]; widthToken=c[1];
+      row={rowId:String(imported.length+1),qty:Number(c[2]),rotate:!/^(no|false|0|fixed)$/i.test(c[3]),edgeBanding:{top:false,right:false,bottom:false,left:false}};
+    }
+    if (row) {
+      const lengthParsed=parseDimensionToken(lengthToken), widthParsed=parseDimensionToken(widthToken);
+      if (lengthParsed && widthParsed) {
+        row.length=lengthParsed.value; row.width=widthParsed.value;
+        row.edgeBandingSpec={
+          '0.8':{length:lengthParsed.underscoreCount,width:widthParsed.underscoreCount},
+          '2':{length:lengthParsed.tildeCount,width:widthParsed.tildeCount}
+        };
+      }
+    }
+    if(row && validRef(row.rowId) && row.length>0 && row.width>0 && Number.isInteger(row.qty) && row.qty>0 && !seen.has(row.rowId.toLowerCase())) { imported.push(row); seen.add(row.rowId.toLowerCase()); }
+  }
+  if(!imported.length){setStatus('mainStatus','No valid CSV rows found, or references are duplicated. Use row_id,length,width,quantity,rotation; add _ or ~ to dimensions for banding.',true);return;}
+  rows=imported;renderRows();invalidatePlan();$('mainStatus').textContent=`Imported ${rows.length} rows / ${pieceTotal()} pieces. Alphanumeric references and dimension-based edge-banding markers were retained. Review values before optimizing.`;
+};
+$('downloadTemplate').onclick = () => {
+  const csv = 'row_id,length,width,quantity,rotation\n1A,780__,500_,2,yes\n2KB,600~~,300_,1,yes\n';
+  downloadBlob(csv, 'cutplan-template.csv', 'text/csv');
+};
+function downloadBlob(content, filename, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$('exportCsv').onclick = () => {
+  if (!rows.length) { setStatus('mainStatus', 'There are no rows to export.', true); return; }
+  const lines = ['row_id,length,width,quantity,rotation', ...rows.map(r => [r.rowId,formatDimensionToken(r.length,r.edgeBandingSpec,'length'),formatDimensionToken(r.width,r.edgeBandingSpec,'width'),r.qty,r.rotate?'yes':'no'].join(','))];
+  downloadBlob(lines.join('\n'), 'cutplan-validated-list.csv', 'text/csv');
+};
+
+function setStatus(id, message, error = false) {
+  $(id).textContent = message; $(id).classList.toggle('error', error); $(id).classList.toggle('success', !error && !!message);
+}
+function fmtArea(mm2) { return (mm2 / 1e6).toFixed(3) + ' m²'; }
+function fmtBandMeters(mm) { return ((Number(mm) || 0) / 1000).toFixed(2) + ' m'; }
+function renderPlan(plan) {
+  $('mSheets').textContent=plan.sheets.length; $('mPieces').textContent=plan.pieces;
+  $('mUtil').textContent=plan.utilization.toFixed(1)+'%'; $('mWaste').textContent=fmtArea(plan.wasteArea);
+  $('mBand08').textContent=fmtBandMeters(plan.edgeBandingTotalsMm?.['0.8']);
+  $('mBand2').textContent=fmtBandMeters(plan.edgeBandingTotalsMm?.['2']);
+  $('layoutArea').className='';
+  const MARKERS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+  const cardHtml=plan.sheets.map((sheet,si)=>{
+    // First pass: decide which parts need external markers and assign stable markers per unique (ref,dims)
+    const calloutMap = new Map(); // key -> {marker, ref, dimA, dimB, qty}
+    let nextMarker = 0;
+    const partMeta = sheet.placed.map(p=>{
+      const x=plan.sheetWidth-(p.y+p.h), y=p.x, w=p.h, h=p.w;
+      const horizontalValue=p.rotated?p.length:p.width;
+      const verticalValue=p.rotated?p.width:p.length;
+      const horizontalText=`${horizontalValue} mm`;
+      const verticalText=`${verticalValue} mm`;
+      const ref=String(p.rowId);
+      const horizontalFont=Math.min(22,Math.max(7,(w-8)/(Math.max(1,horizontalText.length)*.55)));
+      const verticalFont=Math.min(22,Math.max(7,(h-8)/(Math.max(1,verticalText.length)*.55)));
+      const refFont=Math.min(28,Math.max(7,(w-8)/(Math.max(1,ref.length)*.58),h*.26));
+      // Needs external schedule when text would be unreadable or the rectangle is too small
+      const needsCallout = horizontalFont < 9 || verticalFont < 9 || refFont < 9 || w < 100 || h < 100;
+      let marker = null;
+      if (needsCallout) {
+        const key = `${ref}¦${horizontalText}¦${verticalText}`;
+        if (!calloutMap.has(key)) {
+          const m = nextMarker < 20 ? MARKERS[nextMarker] : String(nextMarker + 1);
+          nextMarker++;
+          calloutMap.set(key, { marker: m, ref, dimA: horizontalText, dimB: verticalText, qty: 0 });
+        }
+        calloutMap.get(key).qty++;
+        marker = calloutMap.get(key).marker;
+      }
+      return { p, x, y, w, h, horizontalText, verticalText, ref, horizontalFont, verticalFont, refFont, needsCallout, marker };
+    });
+    const callouts = [...calloutMap.values()];
+    const shapes = partMeta.map(meta=>{
+      const { x, y, w, h, horizontalText, verticalText, ref, horizontalFont, verticalFont, refFont, needsCallout, marker } = meta;
+      // Always draw a solid part boundary. No edge-banding visuals. No dashed guides.
+      let labels = '';
+      if (needsCallout) {
+        // Unique highly-visible marker inside the part — never leave a part unlabelled
+        const markerFont = Math.min(36, Math.max(10, Math.min(w, h) * 0.42));
+        labels += `<text x="${x+w/2}" y="${y+h/2}" text-anchor="middle" dominant-baseline="middle" font-size="${markerFont}" fill="#111" font-weight="900">${escapeHtml(marker)}</text>`;
+      } else {
+        // Large / medium parts: dimensions on sides + original reference in center
+        if (horizontalFont >= 9) {
+          labels += `<text x="${x+w/2}" y="${y+horizontalFont+3}" text-anchor="middle" font-size="${horizontalFont}" fill="#111" font-weight="700">${escapeHtml(horizontalText)}</text>`;
+        }
+        if (verticalFont >= 9) {
+          labels += `<text x="${x+verticalFont+3}" y="${y+h/2}" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 ${x+verticalFont+3} ${y+h/2})" font-size="${verticalFont}" fill="#111" font-weight="700">${escapeHtml(verticalText)}</text>`;
+        }
+        if (refFont >= 9) {
+          labels += `<text x="${x+w/2}" y="${y+h/2}" text-anchor="middle" dominant-baseline="middle" font-size="${refFont}" fill="#111" font-weight="800">${escapeHtml(ref)}</text>`;
+        }
+      }
+      return `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#111" stroke-width="2" vector-effect="non-scaling-stroke"/>${labels}</g>`;
+    }).join('');
+    // No dashed cutting-guide overlays — part boundaries are the only cut lines shown
+    const calloutHtml = callouts.length ? `<div class="small-callouts"><strong>External reference schedule (small / narrow parts)</strong><div class="callout-grid">${callouts.map(c=>`<div class="callout-item"><b>${escapeHtml(c.marker)}</b> ${escapeHtml(c.ref)} · ${escapeHtml(c.dimA)} × ${escapeHtml(c.dimB)} <small>Qty ${c.qty}</small></div>`).join('')}</div></div>` : '';
+    const printHeight = callouts.length === 0 ? 258 : callouts.length <= 8 ? 230 : callouts.length <= 20 ? 210 : 190;
+    const verticalView = `<svg class="layout" style="--print-board-height:${printHeight}mm" viewBox="0 0 ${plan.sheetWidth} ${plan.sheetLength}" role="img" aria-label="Vertical board ${si+1}"><rect x="0" y="0" width="${plan.sheetWidth}" height="${plan.sheetLength}" fill="#fff" stroke="#111" stroke-width="5" vector-effect="non-scaling-stroke"/>${shapes}</svg>`;
+    return `<article class="sheet-card${callouts.length?' has-callouts':''}"><div class="sheet-title"><span>BOARD ${si+1}</span><small>${plan.sheetLength} × ${plan.sheetWidth} mm</small></div>${verticalView}${calloutHtml}</article>`;
+  }).join('');
+  $('layoutArea').innerHTML=`<div class="sheets">${cardHtml}</div>`;
+  const validationNotes = [];
+  validationNotes.push(`<span class="pill">${plan.pieces} pieces · guillotine geometry validated</span>`);
+  if (plan.validated === false) validationNotes.push('<p class="error">Validation reported failures. Do not use this layout for production.</p>');
+  validationNotes.push(`<p><strong>Mode:</strong> ${escapeHtml(displayMode(plan.cutMode))} · ${plan.attempts} search starts (${plan.validAttempts} feasible).</p>`);
+  validationNotes.push(`<p>All parts remain in rectangular regions. All placements are isolated by full straight cuts within rectangular offcuts. Original part references are retained. Every part is identifiable (reference or unique marker).</p>`);
+  validationNotes.push(`<p>Sheet ${plan.sheetLength} × ${plan.sheetWidth} mm · Kerf ${plan.kerf} mm · Margin ${plan.margin} mm · Utilization ${plan.utilization.toFixed(1)}%.</p>`);
+  validationNotes.push(`<p><strong>Edge-banding material totals (not shown on drawings):</strong> 0.8 mm — ${fmtBandMeters(plan.edgeBandingTotalsMm?.['0.8'])}; 2 mm — ${fmtBandMeters(plan.edgeBandingTotalsMm?.['2'])}.</p>`);
+  if (!plan.kerfKnown) validationNotes.push('<p><strong>WARNING:</strong> Kerf was left blank — this is a provisional zero-kerf layout, not production-ready.</p>');
+  $('warnings').innerHTML = validationNotes.join('');
+}
+const modeButtons = [...document.querySelectorAll('[data-cut-mode]')];
+function requiredValue(id) {
+  const element = $(id);
+  if (!element) throw new Error(`CutPlan is missing the #${id} control. Reload the current build.`);
+  return element.value;
+}
+function displayMode(mode) {
+  return mode === 'width' ? 'Cut along width' : mode === 'length' ? 'Cut along length' : 'Optimal (compared both directions)';
+}
+function runOptimization(mode) {
+  try {
+    if (!['width', 'length', 'optimum'].includes(mode)) throw new Error('Choose one of the three cutting modes.');
+    if (!rows.length) throw new Error('Add or import your cutting-list rows first.');
+    if (!window.CutPlanEngine || typeof CutPlanEngine.optimize !== 'function') throw new Error('Cutting engine did not load. Keep nesting-engine.js beside index.html and reload.');
+
+    const sheetLength = Number(requiredValue('sheetL'));
+    const sheetWidth = Number(requiredValue('sheetW'));
+    if (!(sheetLength > 0 && sheetWidth > 0)) throw new Error('Enter a valid custom sheet length and width.');
+    const kerfText = String(requiredValue('kerf') ?? '').trim();
+    const kerfKnown = kerfText !== '';
+    const kerf = kerfKnown ? Number(kerfText) : 0;
+    const marginText = String(requiredValue('margin') ?? '').trim();
+    const margin = marginText === '' ? 0 : Number(marginText);
+    const effort = requiredValue('effort');
+    if (!Number.isFinite(kerf) || kerf < 0 || !Number.isFinite(margin) || margin < 0) throw new Error('Check kerf and edge margin values.');
+
+    modeButtons.forEach(button => { button.disabled = true; });
+    setStatus('mainStatus', `Searching ${displayMode(mode)} guillotine strategies…`);
+    setTimeout(() => {
+      try {
+        const plan = CutPlanEngine.optimize(rows, { sheetLength, sheetWidth, kerf, margin, effort, cutMode: mode });
+        plan.kerfKnown = kerfKnown;
+        lastPlan = plan;
+        renderPlan(plan);
+        $('printBtn').disabled = false;
+        modeButtons.forEach(button => button.classList.toggle('active', button.dataset.cutMode === mode));
+        setStatus('mainStatus', `${displayMode(mode)} plan validated: ${plan.pieces} pieces from ${plan.rows} rows across ${plan.sheets.length} board(s). Tested ${plan.attempts} search starts (${plan.validAttempts} feasible). ${kerfKnown ? 'Kerf allowance included.' : 'WARNING: provisional zero-kerf layout.'}`);
+      } catch (error) {
+        setStatus('mainStatus', error?.message || 'Optimization failed. Check the cutting list and sheet settings.', true);
+      } finally {
+        modeButtons.forEach(button => { button.disabled = false; });
+      }
+    }, 40);
+  } catch (error) {
+    setStatus('mainStatus', error?.message || 'Optimization could not start.', true);
+  }
+}
+modeButtons.forEach(button => button.addEventListener('click', () => runOptimization(button.dataset.cutMode)));
+['sheetL','sheetW','kerf','margin','effort'].forEach(id => {
+  const element = $(id);
+  if (element) element.addEventListener('change', () => { if (lastPlan) invalidatePlan(); });
+});
+
+$('printBtn').onclick = () => {
+  if (!lastPlan) return;
+  window.print();
+};
+
+// Deliberately start empty. No fake sample rows are inserted into the user's job.
+renderRows();
+</script>
+</body>
+</html>

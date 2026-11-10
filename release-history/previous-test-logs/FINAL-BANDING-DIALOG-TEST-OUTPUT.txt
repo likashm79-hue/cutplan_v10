@@ -1,0 +1,12 @@
+PASS dedicated dialog exists
+PASS toolbar opens dedicated editor
+PASS explicit close button exists
+PASS Escape closes native dialog by browser default
+PASS reference selector is inside dialog
+PASS 0.8 mm length and width inputs exist
+PASS 2 mm length and width inputs exist
+PASS dialog layout uses viewport dimensions
+PASS dialog controls use responsive grid
+PASS old sideways-scroll jump link removed
+PASS existing banding save logic preserved
+All 11 edge-banding dialog structural tests passed.

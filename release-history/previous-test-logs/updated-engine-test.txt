@@ -1,0 +1,24 @@
+width: 5 boards, 51 pieces, 75.30% use, 16 candidates (12 valid), 23 ms
+length: 5 boards, 51 pieces, 75.30% use, 16 candidates (12 valid), 21 ms
+optimum: 5 boards, 51 pieces, 75.30% use, 16 candidates (12 valid), 13 ms
+cut direction: width starts horizontal; length starts vertical
+offcut accounting: every terminal rectangular free region is counted and classified as reusable or small scrap
+deep search: 5 boards, 196 candidates, 192 valid, 3 improvements
+determinism: identical rows, settings and seed reproduce identical layouts and board IDs
+measured hard-case improvement: v0.5.0 4 boards → v0.6.3 3; 196 candidates, 192 valid, 84.57% utilization
+rotation: allowed rotation and fixed orientation enforced; edge mapping retained
+edge banding: 4.12 m of 0.8 mm retained; dimension suffix formatter passed
+parser: alphanumeric refs, edge-band suffixes, packed rows and unresolved-line recovery passed
+hierarchical validator: malformed child rectangle rejected
+dataset manySmall: 1 boards, 90 pieces, 25.16%, 2040060 mm² reusable offcuts
+dataset narrow: 1 boards, 30 pieces, 41.31%, 1384935 mm² reusable offcuts
+dataset mixed: 4 boards, 39 pieces, 76.59%, 2150105 mm² reusable offcuts
+dataset rotationDisabled: 2 boards, 24 pieces, 67.21%, 1677120 mm² reusable offcuts
+dataset repeated: 13 boards, 160 pieces, 78.69%, 6519428 mm² reusable offcuts
+dataset guillotineHard: 2 boards, 17 pieces, 78.16%, 1026000 mm² reusable offcuts
+kerf 0 mm: 1 boards, 12 valid candidates
+kerf 2 mm: 1 boards, 12 valid candidates
+kerf 4 mm: 1 boards, 12 valid candidates
+kerf 6 mm: 1 boards, 12 valid candidates
+worker-compatible async optimizer: 7 progress updates; best valid candidate retained through completion
+All CutPlan v0.6.3 engine and parser regression tests passed.

@@ -1,0 +1,17 @@
+dataset,engine,boards,pieces,utilization_pct,waste_m2,reusable_offcut_m2,runtime_ms,candidates,valid_candidates,guillotine_validation
+reference51,v0.5.0,5,51,74.06,3.86,not-measured,136,240,240,legacy cut-line checks only
+reference51,v0.6.3,5,51,74.06,3.86,3.35,225,196,192,hierarchical tree
+manySmall,v0.5.0,1,90,25.16,2.23,not-measured,164,240,240,legacy cut-line checks only
+manySmall,v0.6.3,1,90,25.16,2.23,2.04,283,192,192,hierarchical tree
+narrow,v0.5.0,1,30,41.31,1.75,not-measured,21,240,240,legacy cut-line checks only
+narrow,v0.6.3,1,30,41.31,1.75,1.58,42,192,192,hierarchical tree
+mixed,v0.5.0,4,39,76.59,2.79,not-measured,34,240,240,legacy cut-line checks only
+mixed,v0.6.3,4,39,76.59,2.79,2.30,49,196,192,hierarchical tree
+fixedRotation,v0.5.0,2,24,67.21,1.95,not-measured,12,240,240,legacy cut-line checks only
+fixedRotation,v0.6.3,2,24,67.21,1.95,1.76,17,196,192,hierarchical tree
+repeated160,v0.5.0,13,160,78.69,8.25,not-measured,413,240,240,legacy cut-line checks only
+repeated160,v0.6.3,13,160,78.69,8.25,6.52,449,196,192,hierarchical tree
+difficultGuillotine,v0.5.0,2,17,78.16,1.30,not-measured,12,240,240,legacy cut-line checks only
+difficultGuillotine,v0.6.3,2,17,78.16,1.30,1.07,14,196,192,hierarchical tree
+hard35,v0.5.0,4,35,63.43,4.35,not-measured,41,240,240,legacy cut-line checks only
+hard35,v0.6.3,3,35,84.57,1.38,0.82,62,196,192,hierarchical tree

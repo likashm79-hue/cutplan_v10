@@ -1,0 +1,1 @@
+PASS: no edge-banding table column; no horizontal scroll at 542px and 467px; full-width workspace button; dialog opens; per-part values save independently; values persist when switching/reopening; Close and Escape work; mobile CTA width: 450 467px layout: {'viewport': 467, 'document': 467, 'table': 399, 'tableClient': 399}

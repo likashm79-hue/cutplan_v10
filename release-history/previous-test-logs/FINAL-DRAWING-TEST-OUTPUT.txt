@@ -1,0 +1,1 @@
+Drawing label tests passed: axis-oriented dimensions, adaptive fit, narrow/long references, marker containment and 120 marker-to-schedule mappings.

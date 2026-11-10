@@ -1,0 +1,1 @@
+PASS: one-reference workflow; automatic per-row save; Next/Previous rehydration; invalid input blocked; Finish closes; edge totals correct; Escape closes; no narrow viewport overflow: {'viewport': 467, 'doc': 467, 'table': 399, 'tableClient': 399}

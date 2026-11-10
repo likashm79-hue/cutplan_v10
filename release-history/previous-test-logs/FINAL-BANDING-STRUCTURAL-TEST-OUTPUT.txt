@@ -1,0 +1,15 @@
+PASS dedicated dialog exists
+PASS prominent edge-banding launcher exists
+PASS explicit close button exists
+PASS Escape/native close handling exists
+PASS guided progress indicator exists
+PASS current part reference and dimensions visible
+PASS Previous and Next navigation exist
+PASS reference dropdown removed from guided workflow
+PASS 0.8 mm length and width inputs exist
+PASS 2 mm length and width inputs exist
+PASS full-screen dialog uses viewport dimensions
+PASS edge-banding inputs are outside cutting-list table
+PASS input values save on typing
+PASS navigation saves before moving
+All 14 guided edge-banding structural tests passed.

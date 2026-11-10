@@ -1,0 +1,12 @@
+width: 5 boards, 51 pieces, 75.30% utilization, 12 starts, 12 feasible
+length: 5 boards, 51 pieces, 75.30% utilization, 12 starts, 12 feasible
+optimum: 5 boards, 51 pieces, 75.30% utilization, 12 starts, 12 feasible
+cut direction: width mode starts horizontal; length mode starts vertical
+max search: 5 boards, 75.30% utilization, 240 starts
+edge-band mapping: original edge selection retained and remapped on rotation
+cutting-list parser: split alphanumeric refs and repeated _ / ~ markers retained
+edge-banding totals: 4.12 m of 0.8 mm, 0.00 m of 2 mm for two specified pieces
+mixed material totals: 0.30 m of 0.8 mm and 1.20 m of 2 mm; CSV/display suffix formatter passed
+parser recovery: valid alphanumeric rows retained; malformed extracted line surfaced for manual correction; same-line records split
+manual banding: 1.56 m of 0.8 mm and 2.00 m of 2 mm for two pieces
+All CutPlan v0.5.0 engine and parser checks passed.

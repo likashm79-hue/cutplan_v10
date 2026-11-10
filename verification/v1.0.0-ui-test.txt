@@ -1,0 +1,1 @@
+CutPlan v1.0.0 UI tests passed: no review queue; all parsed rows on main table; duplicates/decimals/high quantity preserved; source notes in row editor; 12-page extraction; selective dual-PSM OCR; optimization and PDF rendering.

@@ -1,0 +1,31 @@
+CutPlan v0.6.5 verification summary
+==================================
+Original v0.5.0 regression suite: PASS
+Current engine/parser suite: PASS
+Drawing suite: PASS
+Edge-banding structural UI suite: PASS (13 assertions)
+Real Chromium edge-banding interaction suite: PASS
+
+Browser test assertions:
+- ED / banding column absent from cutting-list table
+- No horizontal overflow at 542 px and 467 px
+- Full-width launcher is visible
+- Dialog opens on click
+- All four counts save to selected part
+- Values remain independent across references
+- Values remain when dialog closes and reopens in current session
+- Close button and Escape exit the dialog
+- No browser page errors
+
+Measured at 542 px:
+- Document width: 542 px
+- Table client width: 474 px
+- Table scroll width: 474 px
+- Launcher width: 450 px
+
+Measured at 467 px:
+- Document width: 467 px
+- Table client width: 399 px
+- Table scroll width: 399 px
+
+No optimizer, parser, nesting geometry, drawing, or PDF code changed in v0.6.5.
